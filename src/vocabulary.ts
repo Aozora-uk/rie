@@ -22,6 +22,7 @@ export const itemPrefixes = [
 	'業務用の',
 	'Microsoft製',
 	'Apple製',
+	'Яндекс製',
 	'人類の技術を結集して作った',
 	'2018年製', // TODO ランダム
 	'500kgくらいある',
@@ -417,6 +418,7 @@ export const items = [
 	'古文書',
 	'巻物',
 	'Misskey',
+	'AZPick',
 	'もぎもぎフルーツ',
 	'<ここに任意の文字列>',
 	'化石',
