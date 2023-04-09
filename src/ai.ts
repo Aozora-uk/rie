@@ -53,7 +53,6 @@ export default class 藍 {
 	private meta: loki.Collection<Meta>;
 
 	private contexts: loki.Collection<{
-		isDm: boolean;
 		noteId?: string;
 		userId?: string;
 		module: string;
@@ -146,7 +145,7 @@ export default class 藍 {
 			if (data.text && data.text.startsWith('@' + this.account.username)) {
 				// Misskeyのバグで投稿が非公開扱いになる
 				if (data.text == null) data = await this.api('notes/show', { noteId: data.id });
-				this.onReceiveMessage(new Message(this, data, false));
+				this.onReceiveMessage(new Message(this, data));
 			}
 		});
 
@@ -156,7 +155,7 @@ export default class 藍 {
 			if (data.text && data.text.startsWith('@' + this.account.username)) return;
 			// Misskeyのバグで投稿が非公開扱いになる
 			if (data.text == null) data = await this.api('notes/show', { noteId: data.id });
-			this.onReceiveMessage(new Message(this, data, false));
+			this.onReceiveMessage(new Message(this, data));
 		});
 
 		// Renoteされたとき
@@ -174,7 +173,7 @@ export default class 藍 {
 		// メッセージ
 		mainStream.on('messagingMessage', data => {
 			if (data.userId == this.account.id) return; // 自分は弾く
-			this.onReceiveMessage(new Message(this, data, true));
+			this.onReceiveMessage(new Message(this, data));
 		});
 
 		// 通知
@@ -218,14 +217,10 @@ export default class 藍 {
 			return;
 		}
 
-		const isNoContext = !msg.isDm && msg.replyId == null;
+		const isNoContext = msg.replyId == null;
 
 		// Look up the context
-		const context = isNoContext ? null : this.contexts.findOne(msg.isDm ? {
-			isDm: true,
-			userId: msg.userId
-		} : {
-			isDm: false,
+		const context = isNoContext ? null : this.contexts.findOne({
 			noteId: msg.replyId
 		});
 
@@ -270,19 +265,12 @@ export default class 藍 {
 			await delay(1000);
 		}
 
-		if (msg.isDm) {
-			// 既読にする
-			this.api('messaging/messages/read', {
-				messageId: msg.id,
+		// リアクションする
+		if (reaction) {
+			this.api('notes/reactions/create', {
+				noteId: msg.id,
+				reaction: reaction
 			});
-		} else {
-			// リアクションする
-			if (reaction) {
-				this.api('notes/reactions/create', {
-					noteId: msg.id,
-					reaction: reaction
-				});
-			}
 		}
 	}
 
@@ -405,20 +393,12 @@ export default class 藍 {
 	 * コンテキストを生成し、ユーザーからの返信を待ち受けます
 	 * @param module 待ち受けるモジュール名
 	 * @param key コンテキストを識別するためのキー
-	 * @param isDm トークメッセージ上のコンテキストかどうか
 	 * @param id トークメッセージ上のコンテキストならばトーク相手のID、そうでないなら待ち受ける投稿のID
 	 * @param data コンテキストに保存するオプションのデータ
 	 */
 	@autobind
-	public subscribeReply(module: Module, key: string | null, isDm: boolean, id: string, data?: any) {
-		this.contexts.insertOne(isDm ? {
-			isDm: true,
-			userId: id,
-			module: module.name,
-			key: key,
-			data: data
-		} : {
-			isDm: false,
+	public subscribeReply(module: Module, key: string | null, id: string, data?: any) {
+		this.contexts.insertOne({
 			noteId: id,
 			module: module.name,
 			key: key,
