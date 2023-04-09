@@ -37,6 +37,16 @@ export default class extends Module {
 			isEnded: false
 		});
 
+		if (!msg.isDm) {
+			if (exist != null) {
+				msg.reply(serifs.guessingGame.alreadyStarted);
+			} else {
+				msg.reply(serifs.guessingGame.plzDm);
+			}
+
+			return true;
+		}
+
 		const secret = Math.floor(Math.random() * 100);
 
 		this.guesses.insertOne({
@@ -49,7 +59,7 @@ export default class extends Module {
 		});
 
 		msg.reply(serifs.guessingGame.started).then(reply => {
-			this.subscribeReply(msg.userId, reply.id);
+			this.subscribeReply(msg.userId, msg.isDm, msg.isDm ? msg.userId : reply.id);
 		});
 
 		return true;
@@ -83,7 +93,7 @@ export default class extends Module {
 
 		if (guess == null) {
 			msg.reply(serifs.guessingGame.nan).then(reply => {
-				this.subscribeReply(msg.userId, reply.id);
+				this.subscribeReply(msg.userId, msg.isDm, reply.id);
 			});
 			return;
 		}
@@ -121,7 +131,7 @@ export default class extends Module {
 
 		msg.reply(text).then(reply => {
 			if (!end) {
-				this.subscribeReply(msg.userId, reply.id);
+				this.subscribeReply(msg.userId, msg.isDm, reply.id);
 			}
 		});
 	}

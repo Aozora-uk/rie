@@ -11,30 +11,31 @@ import config from '@/config';
 
 export default class Message {
 	private ai: 藍;
-	private note: any;
+	private messageOrNote: any;
+	public isDm: boolean;
 
 	public get id(): string {
-		return this.note.id;
+		return this.messageOrNote.id;
 	}
 
 	public get user(): User {
-		return this.note.user;
+		return this.messageOrNote.user;
 	}
 
 	public get userId(): string {
-		return this.note.userId;
+		return this.messageOrNote.userId;
 	}
 
 	public get text(): string {
-		return this.note.text;
+		return this.messageOrNote.text;
 	}
 
 	public get quoteId(): string | null {
-		return this.note.renoteId;
+		return this.messageOrNote.renoteId;
 	}
 
 	public get visibility(): string {
-		return this.note.visibility;
+		return this.messageOrNote.visibility;
 	}
 
 	/**
@@ -49,14 +50,15 @@ export default class Message {
 	}
 
 	public get replyId(): string {
-		return this.note.replyId;
+		return this.messageOrNote.replyId;
 	}
 
 	public friend: Friend;
 
-	constructor(ai: 藍, note: any) {
+	constructor(ai: 藍, messageOrNote: any, isDm: boolean) {
 		this.ai = ai;
-		this.note = note;
+		this.messageOrNote = messageOrNote;
+		this.isDm = isDm;
 
 		this.friend = new Friend(ai, { user: this.user });
 
@@ -83,13 +85,20 @@ export default class Message {
 			await delay(2000);
 		}
 
-		return await this.ai.post({
-			replyId: this.note.id,
-			text: text,
-			fileIds: opts?.file ? [opts?.file.id] : undefined,
-			cw: opts?.cw,
-			renoteId: opts?.renote
-		});
+		if (this.isDm) {
+			return await this.ai.sendMessage(this.messageOrNote.userId, {
+				text: text,
+				fileId: opts?.file?.id
+			});
+		} else {
+			return await this.ai.post({
+				replyId: this.messageOrNote.id,
+				text: text,
+				fileIds: opts?.file ? [opts?.file.id] : undefined,
+				cw: opts?.cw,
+				renoteId: opts?.renote
+			});
+		}
 	}
 
 	@autobind
